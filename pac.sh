@@ -17,7 +17,7 @@ SYNTAX
 
 OPTIONS
     -x, --extract           Extract mode (default)
-    -c, --compress format   Compress mode (format: tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z)
+    -c, --compress format   Compress mode (format: tar, tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z)
     -v, --verbose           Show detailed progress
     -t, --target dir        Specify target directory
     -d, --delete            Delete original file(s) after operation
@@ -32,8 +32,8 @@ OPTIONS
     -p, --password PASS    Verschlüsselung mit Passwort (nur für zip und 7z)
 
 SUPPORTED FORMATS
-    Compression: tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z
-    Extraction: tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z
+    Compression: tar, tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z
+    Extraction: tar, tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z
 
 BASIC EXAMPLES
 	# Simple compression (creates named_output.format)
@@ -317,6 +317,38 @@ HELPTEXT
     # Log für Debugging
     debug_info "Finaler Ausgabepfad: $output_file"
 
+    # Hilfsfunktion für tar-Extraktion
+    extract_tar() {
+        local file=$1
+        local target=$2
+        local format=$3
+        local exit_code=0
+        
+        local tar_opts=("-x")
+        # Format-spezifische Optionen hinzufügen
+        case "$format" in
+            "gz") tar_opts+=("-z") ;;
+            "bz2") tar_opts+=("-j") ;;
+            "xz") tar_opts+=("-J") ;;
+            "zst") tar_opts+=("--zstd") ;;
+        esac
+        
+        # Verbose-Option hinzufügen, wenn aktiviert
+        [[ "$verbose" == "true" ]] && tar_opts+=("-v")
+        
+        # Datei und Ziel hinzufügen
+        tar_opts+=("-f" "$file" "-C" "$target")
+        
+        # Tar-Befehl ausführen
+        debug_info "Tar-Befehl: tar ${tar_opts[*]}"
+        tar "${tar_opts[@]}" || {
+            exit_code=$?
+            log_error "Fehler beim Extrahieren von $file (Code: $exit_code)"
+        }
+        
+        return $exit_code
+    }
+    
     # Hauptlogik
     if [[ "$mode" == "compress" ]]; then
         # Prüfe ob Eingabedateien vorhanden
@@ -351,6 +383,10 @@ HELPTEXT
 
         # Bestimme die Archiv-Operation
         case "$compress_format" in
+            tar)
+                # Einfache tar-Kompression ohne zusätzliche Kompression
+                tar -c${verbose:+v}f "$output_file" "${input_files[@]}"
+                ;;
             tar.gz)
                 # Wichtig: Kein Leerzeichen zwischen Parametern und -f!
                 tar -cz${verbose:+v}f "$output_file" "${input_files[@]}"
@@ -434,6 +470,8 @@ HELPTEXT
             
             log_info "Inhalt von: $file"
             case "$file" in
+                *.tar)
+                    tar -tf "$file" ;;
                 *.tar.gz|*.tgz) 
                     tar -tzf "$file" ;;
                 *.tar.bz2|*.tbz2) 
@@ -494,44 +532,30 @@ HELPTEXT
             
             debug_info "Extrahiere: $file nach $target_dir"
             case "$file" in
+                *.tar)
+                    extract_tar "$file" "$target_dir" ""
+                    exit_code=$?
+                    ;;
                 *.tar.gz|*.tgz) 
-                    tar_opts=("-xf")
-                    [[ "$verbose" == "true" ]] && tar_opts=("-xvf")
-                    tar "${tar_opts[@]}" "$file" -C "$target_dir" || {
-                        exit_code=$?
-                        log_error "Fehler beim Extrahieren von $file (Code: $exit_code)"
-                    }
+                    extract_tar "$file" "$target_dir" "gz"
+                    exit_code=$?
                     ;;
                 *.tar.bz2|*.tbz2) 
                     # Extrahiere in das gleiche Verzeichnis wie das Target
                     mkdir -p "$target_dir"
-                    
-                    # Verzeichnis der Subdatei erstellen
+                    # Verzeichnis der Subdatei erstellen, falls benötigt
                     mkdir -p "$target_dir/subdir"
                     
-                    # Mit -C und korrekten Pfadkomponenten
-                    tar_opts=("-xjf")
-                    [[ "$verbose" == "true" ]] && tar_opts=("-xvjf")
-                    tar "${tar_opts[@]}" "$file" -C "$target_dir" || {
-                        exit_code=$?
-                        log_error "Fehler beim Extrahieren von $file (Code: $exit_code)"
-                    }
+                    extract_tar "$file" "$target_dir" "bz2"
+                    exit_code=$?
                     ;;
                 *.tar.xz|*.txz) 
-                    tar_opts=("-xf")
-                    [[ "$verbose" == "true" ]] && tar_opts=("-xvf")
-                    tar "${tar_opts[@]}" "$file" -C "$target_dir" || {
-                        exit_code=$?
-                        log_error "Fehler beim Extrahieren von $file (Code: $exit_code)"
-                    }
+                    extract_tar "$file" "$target_dir" "xz"
+                    exit_code=$?
                     ;;
                 *.tar.zst) 
-                    tar_opts=("-xf")
-                    [[ "$verbose" == "true" ]] && tar_opts=("-xvf")
-                    tar "${tar_opts[@]}" "$file" -C "$target_dir" || {
-                        exit_code=$?
-                        log_error "Fehler beim Extrahieren von $file (Code: $exit_code)"
-                    }
+                    extract_tar "$file" "$target_dir" "zst"
+                    exit_code=$?
                     ;;
                 *.zip) 
                     unzip_opts=()
@@ -598,11 +622,11 @@ _pac_autocomplete() {
     local cur="${COMP_WORDS[COMP_CWORD]}"         # Aktuelles Argument
     local prev="${COMP_WORDS[COMP_CWORD-1]}"     # Vorheriges Argument
     local opts="-c --compress -x --extract -v --verbose -t --target -d --delete -n --name -e --exclude -i --include -f --filter --debug -h --help -l --list -j --jobs -p --password"
-    local formats="tar.gz tar.bz2 tar.xz tar.zst zip 7z"
+    local formats="tar tar.gz tar.bz2 tar.xz tar.zst zip 7z"
     local supported_archives=()
 
     # Generiere unterstützte Archivdateien
-    for pattern in "*.tar.gz" "*.tar.bz2" "*.tar.xz" "*.tar.zst" "*.zip" "*.7z"; do
+    for pattern in "*.tar" "*.tar.gz" "*.tar.bz2" "*.tar.xz" "*.tar.zst" "*.zip" "*.7z"; do
         while IFS= read -r file; do
             [[ -n "$file" ]] && supported_archives+=("$file")
         done < <(compgen -G "$pattern" 2>/dev/null)

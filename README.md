@@ -96,7 +96,7 @@ pac [OPTIONS] file1 [file2 ...]
 
 | Option | Long form | Description |
 |--------|-----------|-------------|
-| `-c FORMAT` | `--compress FORMAT` | Compression mode (format: tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z) |
+| `-c FORMAT` | `--compress FORMAT` | Compression mode (format: tar, tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z) |
 | `-x` | `--extract` | Extraction mode (default) |
 | `-l` | `--list` | Display archive contents |
 | `-v` | `--verbose` | Show detailed progress |

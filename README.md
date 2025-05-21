@@ -1,245 +1,257 @@
+# PAC - Pack And Compress
 
-# PAC - Universal Packer
+## Overview
 
-PAC (Pack And Compress) is a versatile Bash tool for easy compression and extraction of archives in various formats. It simplifies the use of complex archiving commands and provides a unified interface for all common archive formats.
+PAC (Pack And Compress) is a versatile command-line tool for simplifying archive compression and extraction tasks on Linux and macOS systems. It provides a unified interface for various common archive formats, supports different operational modes (compress, extract, list), and offers a range of options for customization.
 
 ## Features
 
-- **Unified interface** for all common archive formats
-- **Automatic format detection** during extraction
-- **Parallel processing** with automatic CPU core detection
-- **Pattern-based inclusions/exclusions** for precise archiving
-- **Progress display** for lengthy operations
-- **Password protection** for supported formats
-- **Shell completion** for easy operation
+*   **Multiple Archive Formats**:
+    *   Compression: `tar`, `tar.gz` (tgz), `tar.bz2` (tbz2), `tar.xz` (txz), `tar.zst`, `zip`, `7z`.
+    *   Extraction & Listing: Auto-detects and supports `tar`, `tar.gz` (tgz), `tar.bz2` (tbz2), `tar.xz` (txz), `tar.zst`, `zip`, `7z`.
+*   **Operational Modes**:
+    *   Compress (`-c`): Create archives.
+    *   Extract (`-x` or default): Extract contents from archives.
+    *   List (`-l`): List contents of archives.
+*   **Customization**:
+    *   Custom archive naming (`-n`).
+    *   Specify target directory for output (`-t`).
+    *   Delete original files/archives after successful operation (`-d`).
+    *   Exclude patterns for filtering files during compression (`-e`). (Note: `-i, --include` is parsed but not fully implemented for all archivers).
+    *   Password protection for `zip` and `7z` formats (`-p`).
+*   **Performance**:
+    *   Parallel processing for `.tar.xz`, `.tar.zst`, and `7z` compression using available CPU cores (`-j`).
+*   **Usability**:
+    *   Verbose mode (`-v`) for detailed output.
+    *   Debug mode (`--debug`) for troubleshooting.
+    *   Simple aliases for common operations (e.g., `pac c zip ...`).
+    *   Bash autocompletion for commands and options.
+    *   Comprehensive help message (`-h`).
+    *   Color-coded log messages for better readability.
 
-## Installation
+## Requirements
 
-### Prerequisites
+The script relies on several external tools that must be installed on your system for full functionality with all supported formats:
 
-- Bash 4.0 or higher
-- Depending on the formats you want to use: `tar`, `gzip`, `bzip2`, `xz`, `zstd`, `zip`, `unzip`, `7z`
+*   `bash` (typically version 4.0 or newer for `mapfile` in autocompletion)
+*   `getopt` (GNU version, usually standard on Linux)
+*   `tar`
+*   `gzip`
+*   `bzip2`
+*   `xz` (for `.tar.xz`)
+*   `zstd` (for `.tar.zst`)
+*   `zip` and `unzip` (for `.zip`)
+*   `7z` (p7zip package, for `.7z`)
+*   `nproc` (for determining default number of jobs, part of coreutils)
+*   `pv` (Pipe Viewer - checked by `check_dependencies` but not actively used in current operations; may be for future features or was part of an earlier one).
 
-### Installation
+Most of these are standard on modern Linux distributions. You can typically install them using your system's package manager (e.g., `apt-get`, `yum`, `dnf`, `pacman`, `brew`).
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mrAibo/pac-universal-packer.git
-   ```
+## Installation/Setup
 
-2. Change to the directory:
-   ```bash
-   cd pac-universal-packer
-   ```
+1.  **Download `pac.sh`**:
+    Obtain the `pac.sh` script file.
 
-3. Make the script executable:
-   ```bash
-   chmod +x pac.sh
-   ```
+2.  **Make it Executable**:
+    ```bash
+    chmod +x pac.sh
+    ```
 
-4. (Optional) Create a symbolic link for system-wide access:
-   ```bash
-   sudo ln -s $(pwd)/pac.sh /usr/local/bin/pac
-   ```
+3.  **Place it in your PATH (Recommended)**:
+    For easy access from any directory, move `pac.sh` to a directory included in your system's `PATH` environment variable. For example:
+    ```bash
+    sudo mv pac.sh /usr/local/bin/pac
+    ```
+    Alternatively, you can create a symbolic link:
+    ```bash
+    sudo ln -s /path/to/your/pac.sh /usr/local/bin/pac
+    ```
 
-5. (Optional) Add the function to your `.bashrc` or `.zshrc`:
-   ```bash
-   echo "source $(pwd)/pac.sh" >> ~/.bashrc
-   ```
+4.  **Bash Autocompletion Setup**:
+    The script includes a bash autocompletion function (`_pac_autocomplete`). To enable it:
+    *   **Option A (Sourcing on demand)**: Source the script when you want to use autocompletion in your current session:
+        ```bash
+        source /path/to/your/pac.sh
+        # or if it's in your PATH and named 'pac'
+        source $(which pac)
+        ```
+    *   **Option B (Automatic on login)**: Add the sourcing command to your shell's startup file (e.g., `~/.bashrc` or `~/.bash_profile`):
+        ```bash
+        echo 'source /path/to/your/pac.sh' >> ~/.bashrc
+        # Then, either restart your shell or source the .bashrc manually for the current session:
+        source ~/.bashrc
+        ```
+    This will allow you to use Tab completion for `pac` commands, options, and file/directory arguments.
 
-## Quick Start
+## Usage
 
-### Compression
+### Syntax
 
-```bash
-# Simple compression (creates file.zip)
-pac -c zip file.txt
-
-# Multiple files with custom name
-pac -c tar.gz -n backup src/ config/ docs/
-
-# With exclusion patterns
-pac -c zip -e "*.tmp" -e "node_modules/" src/
+**Standard Mode/Option Syntax:**
+```
+pac [MODE] [OPTIONS] file1 [file2 ...]
 ```
 
-
-### Extraction
-
-```bash
-# Simple extraction
-pac archive.zip
-
-# Extract to a custom target directory
-pac -t output/ archive.tar.gz
-
-# Extract multiple archives
-pac archive1.zip archive2.tar.gz
+**Alias Syntax (Shortcuts):**
 ```
-
-
-### Listing
-
-```bash
-# Display archive contents
-pac -l archive.zip
+pac [ALIAS] [format_if_compressing] file1 [file2 ...]
 ```
+Supported aliases:
+*   `c FORMAT`: Equivalent to `pac -c FORMAT`
+*   `x`: Equivalent to `pac -x`
+*   `l`: Equivalent to `pac -l`
 
+### Main Modes
 
-## Syntax
+*   **Compress**: `pac -c FORMAT [OPTIONS] file_or_dir1 [file_or_dir2 ...]`
+    *   Creates an archive of the specified format from the input files/directories.
+*   **Extract**: `pac [OPTIONS] archive1 [archive2 ...]`
+    *   This is the **default mode** if no other mode (`-c`, `-l`) is specified.
+    *   Extracts contents of the given archive(s). Format is auto-detected.
+*   **List**: `pac -l [OPTIONS] archive1 [archive2 ...]`
+    *   Lists the contents of the specified archive(s).
 
-```
-pac [OPTIONS] file1 [file2 ...]
-```
+### Detailed Options Table
 
+| Short Option | Long Option        | Argument   | Description                                                                 |
+|--------------|--------------------|------------|-----------------------------------------------------------------------------|
+| `-c`         | `--compress`       | `FORMAT`   | **Compress mode**. Requires a format (e.g., `zip`, `tar.gz`).               |
+| `-x`         | `--extract`        |            | **Extract mode**. Default if no other mode is given.                        |
+| `-l`         | `--list`           |            | **List mode**. Shows archive contents.                                      |
+| `-t`         | `--target`         | `DIRECTORY`| Specify target directory for output. Default: current directory.            |
+| `-n`         | `--name`           | `FILENAME` | Custom archive name (without extension).                                    |
+| `-d`         | `--delete`         |            | Delete original file(s)/archive(s) after successful operation.             |
+| `-v`         | `--verbose`        |            | Enable verbose output for detailed progress.                                |
+| `-h`         | `--help`           |            | Show the comprehensive help message and exit.                               |
+| `--debug`    |                    |            | Enable debug output (`set -x`) for troubleshooting.                         |
+| `-e`         | `--exclude`        | `PATTERN`  | Exclude files/directories matching PATTERN (compression). Use multiple times. |
+| `-i`         | `--include`        | `PATTERN`  | Include only files/directories matching PATTERN (compression). (Note: Limited support by some archivers) |
+| `-j`         | `--jobs`           | `NUM`      | Number of processor cores for parallel compression (e.g., for xz, zstd, 7z). |
+| `-p`         | `--password`       | `PASS`     | Set password for encryption (zip and 7z only).                              |
 
-## Options
+*Note: The `-f, --filter FILE` option has been removed from the script.*
 
-| Option | Long form | Description |
-|--------|-----------|-------------|
-| `-c FORMAT` | `--compress FORMAT` | Compression mode (format: tar, tar.gz, tar.bz2, tar.xz, tar.zst, zip, 7z) |
-| `-x` | `--extract` | Extraction mode (default) |
-| `-l` | `--list` | Display archive contents |
-| `-v` | `--verbose` | Show detailed progress |
-| `-t DIR` | `--target DIR` | Specify target directory |
-| `-d` | `--delete` | Delete original file(s) after operation |
-| `-e PATTERN` | `--exclude PATTERN` | Exclude files/directories matching pattern |
-| `-i PATTERN` | `--include PATTERN` | Include only files/directories matching pattern |
-| `-f FILE` | `--filter FILE` | Read include/exclude patterns from file |
-| `-n NAME` | `--name NAME` | Custom archive name (without extension) |
-| `-j NUM` | `--jobs NUM` | Number of processes for parallel compression |
-| `-p PASS` | `--password PASS` | Encryption with password (only for zip and 7z) |
-| `--debug` | | Enable debug output |
-| `-h` | `--help` | Show help message |
+## Examples
 
-## Supported Formats
+### Basic Compression
 
-### Compression
-- tar.gz (gzip)
-- tar.bz2 (bzip2)
-- tar.xz (xz)
-- tar.zst (zstd)
-- zip
-- 7z
+*   Compress `mydoc.txt` to `mydoc.zip`:
+    ```bash
+    pac -c zip mydoc.txt
+    ```
+*   Compress `my_project/` directory to `my_project.tar.gz`:
+    ```bash
+    pac -c tar.gz my_project/
+    ```
+*   Use alias to compress `important_docs/` to `important_docs.7z` (7z chosen by alias):
+    ```bash
+    pac c 7z important_docs/
+    ```
+*   Compress multiple files into `archive_data.tar.bz2`:
+    ```bash
+    pac -c tar.bz2 file1.txt report.doc image.png
+    ```
 
-### Extraction
-All of the above plus their alias names (e.g., .tgz for .tar.gz)
+### Basic Extraction
 
-## Advanced Usage
+*   Extract `archive.zip` to the current directory (extract is default mode):
+    ```bash
+    pac archive.zip
+    ```
+*   Explicitly use extract mode for `backup.tar.gz`:
+    ```bash
+    pac -x backup.tar.gz
+    ```
+*   Use alias for extraction:
+    ```bash
+    pac x old_stuff.7z
+    ```
 
-### Pattern-based Inclusions/Exclusions
+### Listing Archive Contents
 
-```bash
-# Exclude files
-pac -c zip -e "*.log" -e "*.tmp" src/
+*   List contents of `my_archive.tar.zst`:
+    ```bash
+    pac -l my_archive.tar.zst
+    ```
+*   Use alias for listing:
+    ```bash
+    pac l project_backup.zip
+    ```
 
-# Include only specific files
-pac -c tar.gz -i "*.txt" -i "*.md" docs/
+### Custom Naming and Targeting
 
-# Use complex patterns from file
-echo "+*.txt" > patterns.txt
-echo "+*.md" >> patterns.txt
-echo "-*test*" >> patterns.txt
-pac -c zip -f patterns.txt docs/
-```
+*   Compress `file.txt` to `archives/backup_manual.zip`:
+    ```bash
+    pac -c zip -t archives/ -n backup_manual file.txt
+    ```
+*   Extract `my_archive.tar` to `extracted_files/` directory:
+    ```bash
+    pac -t extracted_files/ my_archive.tar
+    ```
 
+### Deleting Originals
 
-### Pattern File Format
+*   Compress `logs/` directory to `logs.tar.gz` and delete `logs/` afterwards:
+    ```bash
+    pac -c tar.gz -d logs/
+    ```
+*   Extract `data.zip` and delete the `data.zip` archive afterwards:
+    ```bash
+    pac -d data.zip
+    ```
 
-```
-# Comments start with a hash
-+*.txt        # Include text files
-+docs/*.md    # Include markdown files in docs directory
--*.tmp        # Exclude temporary files
--build/       # Exclude build directory
-```
+### Filtering during Compression
 
+*   Compress `project/` excluding all `.tmp` files and the `build/` directory into `project.zip`:
+    ```bash
+    pac -c zip -e "*.tmp" -e "build/" project/
+    ```
+*   Compress `documents/` including only PDF and DOCX files into `docs.tar.gz` (note: include patterns might not be fully supported by all archivers):
+    ```bash
+    pac -c tar.gz -i "*.pdf" -i "*.docx" documents/
+    ```
 
-### Multithreading
+### Advanced Compression
 
-```bash
-# Use specific number of threads
-pac -c tar.xz -j 4 large_directory/
+*   Compress `large_dataset/` to `backup.tar.xz` using 4 parallel jobs and custom name `backup`:
+    ```bash
+    pac -c tar.xz -j 4 -n backup large_dataset/
+    ```
+*   Create a password-protected 7z file:
+    ```bash
+    pac -c 7z -p "YourSecretPassword" sensitive_files/
+    ```
 
-# Automatic thread detection (default behavior)
-pac -c tar.xz large_directory/
-```
+### Combining Options
 
+*   Compress `src_code/` into `release_v1.tar.zst` in the `../builds` directory, using all available cores, and show verbose output:
+    ```bash
+    pac -c tar.zst -t ../builds -n release_v1 -j 0 -v src_code/
+    ```
 
-### Password Protection
+## Exit Codes
 
-```bash
-# Protect with password (for zip and 7z)
-pac -c zip -p "my_password" sensitive_data/
+The script uses the following exit codes:
 
-# Interactive password entry
-pac -c 7z -p "" confidential_files/
-```
+*   `0`: Success
+*   `1`: General error (e.g., tool failure during compress/extract)
+*   `2`: Usage error (e.g., invalid option, missing argument)
+*   `3`: Input file / archive not found
+*   `4`: Permission error (e.g., cannot create/write to target directory)
+*   `5`: Invalid or unsupported archive format for the operation
+*   `6`: Required dependency (tool like tar, gzip) not found
 
+## Troubleshooting/Tips
 
-## Use Cases
-
-### Project Backup
-
-```bash
-pac -n project-backup -c zip -e "node_modules/" -e "*.log" -e "tmp/" src/
-```
-
-
-### Document Archiving
-
-```bash
-pac -c zip -i "*.pdf" -i "*.doc" -i "*.txt" -n documents docs/
-```
-
-
-### Source Code Backup with Cleanup
-
-```bash
-pac -t backups/ -n src-v1.0 -c tar.gz -d -e "*.tmp" -e "build/" src/
-```
-
-
-### Multi-Directory Backup
-
-```bash
-pac -c tar.gz -n full-backup -t backups/ src/ docs/ config/
-```
-
-
-## Tips
-
-- All options can be specified in any order.
-- Archive names are based on input names if `-n` is not used.
-- Multiple inputs without `-n` create 'archive.*'.
-- Use `-v` for detailed progress information.
-- The `-j` option overrides automatic thread detection.
-- Pattern files support both inclusion (`+`) and exclusion (`-`) patterns.
-
-## Troubleshooting
-
-### Common Issues
-
-- **"Command not found" error**: Ensure all required tools are installed (tar, gzip, etc.).
-- **Extraction fails**: Check the archive format and ensure it's not corrupted.
-- **No files found**: Check the inclusion/exclusion patterns and paths.
-
-### Debug Mode
-
-Use `--debug` for detailed output:
-
-```bash
-pac --debug -c zip my_files/
-```
+*   If operations fail, ensure all required tools (see "Requirements") are installed and accessible in your `PATH`.
+*   Use the `--debug` option to see the exact commands being executed by `pac.sh`, which can help diagnose issues.
+*   When using exclude (`-e`) or include (`-i`) patterns, ensure they are quoted to prevent shell expansion before `pac.sh` processes them.
+*   For extraction, `pac.sh` auto-detects the format. If you have an archive with an unusual or missing extension, it might fail.
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b my-new-feature`
-3. Run tests before creating a pull request
-4. Create a pull request with a clear description of your changes
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs, feature requests, or improvements.
 
 ## License
 
-This project is licensed under the GNU GPL v3 License.
+This script is released under the MIT License. See the `LICENSE` file for details.

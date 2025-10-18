@@ -39,15 +39,17 @@ PAC (Pack And Compress) is a versatile, user-friendly Bash tool for easy compres
 - **pv** - For progress bars (optional but recommended)
 
 ### Format-Specific Tools
-| Format | Required Tools |
-|--------|---------------|
-| tar | `tar` |
-| tar.gz | `tar`, `gzip` |
-| tar.bz2 | `tar`, `bzip2` |
-| tar.xz | `tar`, `xz` |
-| tar.zst | `tar`, `zstd` |
-| zip | `zip`, `unzip` |
-| 7z | `p7zip` or `7z` |
+
+| Format   | Required Tools      |
+|----------|---------------------|
+| tar      | `tar`               |
+| tar.gz   | `tar`, `gzip`       |
+| tar.bz2  | `tar`, `bzip2`      |
+| tar.xz   | `tar`, `xz`         |
+| tar.zst  | `tar`, `zstd`       |
+| zip      | `zip`, `unzip`      |
+| 7z       | `p7zip` or `7z`     |
+
 
 ### Quick Install Dependencies
 
@@ -181,25 +183,26 @@ pac [OPTIONS] file1 [file2 ...]
 
 ### Options Reference
 
-| Short | Long | Description | Example |
-|-------|------|-------------|---------|
-| `-c FORMAT` | `--compress FORMAT` | Compression mode | `pac -c tar.gz files/` |
-| `-x` | `--extract` | Extraction mode (default) | `pac -x archive.zip` |
-| `-l` | `--list` | Display archive contents | `pac -l archive.tar.gz` |
-| `-v` | `--verbose` | Show progress bar and details | `pac -v -c zip src/` |
-| `-q` | `--quiet` | Suppress output (for scripts) | `pac -q -c tar files/` |
-| `-t DIR` | `--target DIR` | Specify target directory | `pac -t /backup/ -c zip src/` |
-| `-d` | `--delete` | Delete originals after operation | `pac -d archive.zip` |
-| `-e PATTERN` | `--exclude PATTERN` | Exclude matching files/dirs | `pac -c zip -e "*.tmp" src/` |
-| `-i PATTERN` | `--include PATTERN` | Include only matching files | `pac -c zip -i "*.txt" docs/` |
-| `-f FILE` | `--filter FILE` | Read patterns from file | `pac -c zip -f patterns.txt src/` |
-| `-n NAME` | `--name NAME` | Custom archive name | `pac -c tar.gz -n backup src/` |
-| `-j NUM` | `--jobs NUM` | Parallel compression threads | `pac -c tar.xz -j 8 src/` |
-| `-p` | `--password` | Password protection (secure input) | `pac -c zip -p confidential/` |
-| | `--dry-run` | Preview without executing | `pac --dry-run -c zip -d src/` |
-| | `--no-confirm` | Skip confirmations | `pac -d --no-confirm archive.zip` |
-| | `--debug` | Enable debug output | `pac --debug -c zip src/` |
-| `-h` | `--help` | Show help message | `pac -h` |
+| Short       | Long                | Description                          | Example                           |
+|-------------|---------------------|--------------------------------------|-----------------------------------|
+| `-c FORMAT` | `--compress FORMAT` | Compression mode                     | `pac -c tar.gz files/`            |
+| `-x`        | `--extract`         | Extraction mode (default)            | `pac -x archive.zip`              |
+| `-l`        | `--list`            | Display archive contents             | `pac -l archive.tar.gz`           |
+| `-v`        | `--verbose`         | Show progress bar and details        | `pac -v -c zip src/`              |
+| `-q`        | `--quiet`           | Suppress output (for scripts)        | `pac -q -c tar files/`            |
+| `-t DIR`    | `--target DIR`      | Specify target directory             | `pac -t /backup/ -c zip src/`     |
+| `-d`        | `--delete`          | Delete originals after operation     | `pac -d archive.zip`              |
+| `-e PATTERN`| `--exclude PATTERN` | Exclude matching files/dirs          | `pac -c zip -e "*.tmp" src/`      |
+| `-i PATTERN`| `--include PATTERN` | Include only matching files          | `pac -c zip -i "*.txt" docs/`     |
+| `-f FILE`   | `--filter FILE`     | Read patterns from file              | `pac -c zip -f patterns.txt src/` |
+| `-n NAME`   | `--name NAME`       | Custom archive name                  | `pac -c tar.gz -n backup src/`    |
+| `-j NUM`    | `--jobs NUM`        | Parallel compression threads         | `pac -c tar.xz -j 8 src/`         |
+| `-p`        | `--password`        | Password protection (secure input)   | `pac -c zip -p confidential/`     |
+|             | `--dry-run`         | Preview without executing            | `pac --dry-run -c zip -d src/`    |
+|             | `--no-confirm`      | Skip confirmations                   | `pac -d --no-confirm archive.zip` |
+|             | `--debug`           | Enable debug output                  | `pac --debug -c zip src/`         |
+| `-h`        | `--help`            | Show help message                    | `pac -h`                          |
+
 
 ### Shortcut Commands
 
@@ -211,15 +214,16 @@ pac l archive.tar.gz   # List (shortcut)
 
 ## 🎨 Supported Formats
 
-| Format | Extension(s) | Compression | Speed | Ratio | Notes |
-|--------|-------------|-------------|-------|-------|-------|
-| **tar** | .tar | None | ⚡⚡⚡⚡⚡ | - | Container only |
-| **tar.gz** | .tar.gz, .tgz | gzip | ⚡⚡⚡⚡ | 📦📦📦 | Good balance |
-| **tar.bz2** | .tar.bz2, .tbz2 | bzip2 | ⚡⚡⚡ | 📦📦📦📦 | Better compression |
-| **tar.xz** | .tar.xz, .txz | xz/LZMA | ⚡⚡ | 📦📦📦📦📦 | Best compression |
-| **tar.zst** | .tar.zst | zstd | ⚡⚡⚡⚡⚡ | 📦📦📦📦 | Best speed/ratio |
-| **zip** | .zip | deflate | ⚡⚡⚡ | 📦📦📦 | Cross-platform |
-| **7z** | .7z | LZMA2 | ⚡⚡ | 📦📦📦📦📦 | Maximum compression |
+| Format      | Extension(s)        | Compression | Speed      | Ratio           | Notes                |
+|-------------|---------------------|-------------|------------|-----------------|----------------------|
+| **tar**     | .tar                | None        | ⚡⚡⚡⚡⚡ | -               | Container only       |
+| **tar.gz**  | .tar.gz, .tgz       | gzip        | ⚡⚡⚡⚡   | 📦📦📦         | Good balance         |
+| **tar.bz2** | .tar.bz2, .tbz2     | bzip2       | ⚡⚡⚡     | 📦📦📦📦       | Better compression   |
+| **tar.xz**  | .tar.xz, .txz       | xz/LZMA     | ⚡⚡       | 📦📦📦📦📦     | Best compression     |
+| **tar.zst** | .tar.zst            | zstd        | ⚡⚡⚡⚡⚡ | 📦📦📦📦       | Best speed/ratio     |
+| **zip**     | .zip                | deflate     | ⚡⚡⚡     | 📦📦📦         | Cross-platform       |
+| **7z**      | .7z                 | LZMA2       | ⚡⚡       | 📦📦📦📦📦     | Maximum compression  | 
+
 
 **Legend:** ⚡ = Speed, 📦 = Compression ratio
 
@@ -729,3 +733,6 @@ See [LICENSE](LICENSE) file for details.
 
 **Star ⭐ this repo if you find it useful!**
 ```
+
+
+
